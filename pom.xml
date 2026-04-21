@@ -4,33 +4,78 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>com</groupId>
+    <groupId>com.matchnow</groupId>
     <artifactId>matchnow-swagger-spring-boot-starter</artifactId>
-    <version>0.0.7-SNAPSHOT</version>
+    <version>0.1.0</version>
 
-    <parent>
-        <groupId>org.springframework.boot</groupId>
-        <artifactId>spring-boot-starter-parent</artifactId>
-        <version>2.7.7</version>
-    </parent>
+    <name>matchnow-swagger-spring-boot-starter</name>
+    <description>
+        Shared Swagger/OpenAPI auto-configuration for Matchnow microservices.
+        Thin jar: Spring Boot and Spring Web are provided by the consuming service.
+        Compatible with Spring Boot 2.5.x, 2.6.x and 2.7.x.
+    </description>
 
     <properties>
         <maven.compiler.source>11</maven.compiler.source>
         <maven.compiler.target>11</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+
+        <!--
+            Build-baseline Spring Boot version.
+            The starter is compiled against the LOWEST supported Spring Boot (2.5.4)
+            so that only APIs available across 2.5.x / 2.6.x / 2.7.x are used.
+            The actual Spring/Spring Boot versions at runtime are supplied
+            by the consuming service.
+        -->
+        <spring-boot.version>2.5.4</spring-boot.version>
+        <springdoc.version>1.7.0</springdoc.version>
+        <lombok.version>1.18.30</lombok.version>
     </properties>
 
-    <dependencies>
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-dependencies</artifactId>
+                <version>${spring-boot.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
 
+    <dependencies>
+        <!--
+            All Spring dependencies are `provided` — the consuming service's
+            Spring Boot BOM decides the actual runtime version (2.5.x ~ 2.7.x).
+        -->
         <dependency>
             <groupId>org.springframework</groupId>
             <artifactId>spring-web</artifactId>
+            <scope>provided</scope>
         </dependency>
 
         <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-context</artifactId>
+            <scope>provided</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-autoconfigure</artifactId>
+            <scope>provided</scope>
+        </dependency>
+
+        <!--
+            springdoc-openapi-ui 1.7.0 is compile-scope and version-pinned:
+            it is the single contract between this starter and the consuming
+            service, and 1.7.0 supports Spring Boot 2.4 through 2.7 inclusive.
+        -->
+        <dependency>
             <groupId>org.springdoc</groupId>
             <artifactId>springdoc-openapi-ui</artifactId>
-            <version>1.7.0</version>
+            <version>${springdoc.version}</version>
         </dependency>
 
         <dependency>
@@ -42,12 +87,10 @@
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
-            <version>1.18.30</version>
+            <version>${lombok.version}</version>
             <scope>provided</scope>
         </dependency>
-
     </dependencies>
-
 
     <repositories>
         <repository>
@@ -59,39 +102,50 @@
         </repository>
     </repositories>
 
-<!--  Jar 파일로 만들어 직접 사용 시 해당 라이브러리가 사용하는 라이브러리를 사용할 수 있도록 fat jar 빌드  -->
+    <distributionManagement>
+        <repository>
+            <id>nexus-releases</id>
+            <url>https://nexus.wematchnow.com/repository/maven-releases/</url>
+        </repository>
+        <snapshotRepository>
+            <id>nexus-snapshots</id>
+            <url>https://nexus.wematchnow.com/repository/maven-snapshots/</url>
+        </snapshotRepository>
+    </distributionManagement>
+
     <build>
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-shade-plugin</artifactId>
-                <version>3.2.4</version>
-                <executions>
-                    <execution>
-                        <phase>package</phase>
-                        <goals>
-                            <goal>shade</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
-
-            <!-- Make sure the compiler plugin is set up correctly -->
-            <plugin>
                 <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.11.0</version> <!-- or latest -->
+                <version>3.11.0</version>
                 <configuration>
-                    <source>11</source> <!-- adjust according to your JDK -->
+                    <source>11</source>
                     <target>11</target>
                     <annotationProcessorPaths>
                         <path>
                             <groupId>org.projectlombok</groupId>
                             <artifactId>lombok</artifactId>
-                            <version>1.18.30</version>
+                            <version>${lombok.version}</version>
                         </path>
                     </annotationProcessorPaths>
                 </configuration>
             </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-source-plugin</artifactId>
+                <version>3.3.0</version>
+                <executions>
+                    <execution>
+                        <id>attach-sources</id>
+                        <goals>
+                            <goal>jar-no-fork</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
         </plugins>
     </build>
+
 </project>
